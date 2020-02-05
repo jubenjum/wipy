@@ -9,12 +9,8 @@ class ADXL345():
         self.dt = dt
 
         self.n = 0
-        self.into_buf_i = 0
-        self.write_i = 0
-        #self.buffer_ = array.array('hhh', [0 for i in range(8192)])
-        self.buff_a = []
-        self.buff_t = []
-
+        self.buf_index = 0
+        self.buf_0 = [[0, 0] for i in range(1000)]
 
         self.rtc = RTC()
         self.i2c = I2C()
@@ -32,24 +28,27 @@ class ADXL345():
     def _handler(self, alarm):
         self.n += 1
         self.get_data()
-        self.buff_a.append(self.data)
-        self.buff_t.append(time.ticks_diff(self.begin, time.ticks_us()))
-        #self.write_to_file()
 
-        #self.buffer_[self.into_buf_i] = self.data
-        #self.buffer_[self.into_buf_i + 3] = time.ticks_diff(time.ticks_us(), self.begin)
-        #self.into_buf_i += 3
+        self.buf_0[self.buf_index][0] = time.ticks_diff(self.begin, time.ticks_us())
+        self.buf_0[self.buf_index][1] = self.data
+
+        self.buf_index += 1
+        if (self.buf_index >= len(self.buf_0)):
+            self.write_to_file()
+            self.buf_index = 0
 
     def write_to_file(self):
-        self.f.write("{} {}\n".format(self.rtc.now(), self.vals))
-        #print("{} {}\n".format(self.rtc.now(), self.vals))
+        for i in range(len(self.buf_0)):
+            self.f.write("{} {}\n".format(self.buf_0[i][0],
+                struct.unpack('<hhh', self.buf_0[i][1])))
 
     def stop(self):
         self.__alarm.callback(None)
         print("n=%d"%self.n)
-        for a, t in zip(self.buff_a, self.buff_t):
-            self.f.write("{} {}\n".format(t,
-                 struct.unpack('<hhh', a)))
+        for i in range(self.buf_index):
+            self.f.write("{} {}\n".format(self.buf_0[i][0],
+                struct.unpack('<hhh', self.buf_0[i][1])))
+
         self.f.close()
 
     def get_data(self):
@@ -65,7 +64,7 @@ class ADXL345():
                 time.sleep(self.dt)
 
 s = ADXL345('data.txt', 0.005)
-time.sleep(60)
+time.sleep(600)
 s.stop()
 
 #with open('data.txt', 'w') as f:
