@@ -10,7 +10,8 @@ class ADXL345():
 
         self.n = 0
         self.buf_index = 0
-        self.buf_0 = [[0, 0] for i in range(1000)]
+        self.buf_0_len = 2
+        self.buf_0 = [[0, 0] for i in range(self.buf_0_len)]
 
         self.rtc = RTC()
         self.i2c = I2C()
@@ -33,7 +34,7 @@ class ADXL345():
         self.buf_0[self.buf_index][1] = self.data
 
         self.buf_index += 1
-        if (self.buf_index >= len(self.buf_0)):
+        if self.buf_index >= self.buf_0_len:
             self.write_to_file()
             self.buf_index = 0
 
@@ -53,22 +54,8 @@ class ADXL345():
 
     def get_data(self):
         self.data = self.i2c.readfrom_mem(83, 0x32, 6)
-        #self.vals = struct.unpack('<hhh', self.data)
 
-    def load_to_file(self):
-        with open('data.txt', 'w') as f:
-            while 1:
-                self.get_data()
-                f.write("{} {}\n".format(self.rtc.now(), self.vals))
-                # print(rtc.now(), vals)
-                time.sleep(self.dt)
 
 s = ADXL345('data.txt', 0.005)
 time.sleep(600)
 s.stop()
-
-#with open('data.txt', 'w') as f:
-#    s = ADXL345(f, 1)
-
-
-#s.load_to_file()
