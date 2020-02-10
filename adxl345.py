@@ -34,7 +34,7 @@ class ADXL345():
         self.buf_0 = [[0, 0, 0] for i in range(self.buf_0_len)]
 
         self.rtc = RTC()
-        self.i2c = I2C()
+        self.i2c = I2C(baudrate=400000)
         self._setup()
         self.begin = time.ticks_ms()
 
