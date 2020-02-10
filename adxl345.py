@@ -17,7 +17,6 @@ PORT = 80
 
 class ADXL345():
     def __init__(self, file_, dt=1.0):
-        self.f = open(file_, 'w')
         self.dt = dt
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -26,6 +25,7 @@ class ADXL345():
             self.socket_ = True
         except:
             print('no connection to {}'.format(HOST))
+            self.f = open(file_, 'w')
             self.socket_ = False
 
         self.n = 0
@@ -36,7 +36,7 @@ class ADXL345():
         self.rtc = RTC()
         self.i2c = I2C()
         self._setup()
-        self.begin = time.ticks_us()
+        self.begin = time.ticks_ms()
 
         self.__alarm = Timer.Alarm(self._handler, dt, periodic=True)
 
@@ -50,9 +50,9 @@ class ADXL345():
         self.n += 1
         self.get_data()
 
-        self.buf_0[self.buf_index][0] = time.ticks_diff(self.begin, time.ticks_us())
+        self.buf_0[self.buf_index][0] = time.ticks_diff(self.begin, time.ticks_ms())
         self.buf_0[self.buf_index][1] = struct.unpack('<hhh', self.data)
-        self.buf_0[self.buf_index][2] = struct.pack('l', time.ticks_diff(self.begin, time.ticks_us()))
+        self.buf_0[self.buf_index][2] = struct.pack('l', time.ticks_diff(self.begin, time.ticks_ms()))
 
         self.buf_index += 1
         if self.buf_index >= self.buf_0_len:
@@ -79,14 +79,15 @@ class ADXL345():
             else: # save to a file
                 self.f.write(self.format_buf(i))
 
-        self.f.close()
         if self.socket_:
             self.s.close()
+        else:
+            self.f.close()
 
     def get_data(self):
         self.data = self.i2c.readfrom_mem(83, 0x32, 6)
 
 
 s = ADXL345('data.txt', 0.01)
-time.sleep(10)
+time.sleep(60)
 s.stop()
