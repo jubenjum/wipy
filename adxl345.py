@@ -20,13 +20,17 @@ class ADXL345():
         self.dt = dt
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        try:
-            self.s.connect((HOST, PORT))
-            self.socket_ = True
-        except:
-            print('no connection to {}'.format(HOST))
-            self.f = open(file_, 'w')
-            self.socket_ = False
+        while 1:
+            try:
+                self.s.connect((HOST, PORT))
+                self.socket_ = True
+            except:
+                time.sleep(1)
+                continue
+                #print('no connection to {}'.format(HOST))
+                #self.f = open(file_, 'w')
+                #self.socket_ = False
+            break
 
         self.n = 0
         self.buf_index = 0
@@ -89,5 +93,5 @@ class ADXL345():
 
 
 s = ADXL345('data.txt', 0.01)
-time.sleep(60)
-s.stop()
+#time.sleep(60)
+#s.stop()
