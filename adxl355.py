@@ -1,5 +1,6 @@
 from machine import I2C, RTC, Timer
 import time
+import os
 import pycom
 import struct
 import array
@@ -27,18 +28,7 @@ AXIS_LENGTH         = 9
 class ADXL355():
     def __init__(self, file_, dt=1.0):
         self.dt = dt
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        while 1:
-            try:
-                self.s.connect((HOST, PORT))
-                self.socket_ = True
-            except:
-                time.sleep(1)
-                print('no connection to {}'.format(HOST))
-                self.f = open(file_, 'w')
-                self.socket_ = False
-            break
 
         self.n = 0
         self.buf_index = 0
@@ -48,9 +38,28 @@ class ADXL355():
         self.rtc = RTC()
         self.i2c = I2C(baudrate=400000)
         self._setup()
+
+        self._connnect_socket()
         self.begin = time.ticks_ms()
 
         self.__alarm = Timer.Alarm(self._handler, dt, periodic=True)
+
+    def _connnect_socket(self):
+        while 1:
+            try:
+                self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.s.connect((HOST, PORT))
+                self.socket_ = True
+            except:
+                print('waiting ...')
+                time.sleep(1)
+                #time.sleep(os.urandom(1)[0]/256)
+                continue
+                #print('no connection to {}'.format(HOST))
+                #self.f = open(file_, 'w')
+                #self.socket_ = False
+            break
+        print('connected ...')
 
     def _setup(self):
         # range of the accelerometric data
@@ -111,10 +120,12 @@ class ADXL355():
         else:
             self.f.close()
 
+        #self._connnect_socket()
+
     def get_data(self):
         self.data = self.i2c.readfrom_mem(DEVICE_ADDRESS, AXIS_START, AXIS_LENGTH)
 
 
 s = ADXL355('data.txt', 0.01)
-time.sleep(60)
-s.stop()
+#time.sleep(60)
+#s.stop()
